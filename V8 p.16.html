@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syllable Sprint</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+  />
+
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      font-family: "Trebuchet MS", "Comic Sans MS", Arial, sans-serif;
+      background: linear-gradient(135deg, #fef9c3, #dbeafe, #dcfce7);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    button {
+      user-select: none;
+    }
+
+    .game-font {
+      letter-spacing: 0.02em;
+    }
+
+    .kid-card {
+      border: 6px solid #1e3a8a;
+      box-shadow: 0 16px 0 rgba(30, 58, 138, 0.22);
+    }
+
+    .answer-btn {
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      box-shadow: 0 12px 0 rgba(15, 23, 42, 0.16);
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 16px 0 rgba(15, 23, 42, 0.16);
+    }
+
+    .answer-btn:active:not(:disabled) {
+      transform: translateY(4px) scale(0.98);
+      box-shadow: 0 6px 0 rgba(15, 23, 42, 0.16);
+    }
+
+    .correct-choice {
+      background: #22c55e !important;
+      color: white !important;
+      font-weight: 900 !important;
+      border-color: #15803d !important;
+    }
+
+    .wrong-choice {
+      background: #ef4444 !important;
+      color: white !important;
+      font-weight: 900 !important;
+      border-color: #b91c1c !important;
+    }
+
+    .timer-danger {
+      color: #dc2626 !important;
+      animation: pulseTimer 0.55s infinite alternate;
+    }
+
+    @keyframes pulseTimer {
+      from { transform: scale(1); }
+      to { transform: scale(1.18); }
+    }
+
+    .lightning-bg {
+      animation: lightningFlash 0.55s infinite alternate;
+    }
+
+    @keyframes lightningFlash {
+      from {
+        background: linear-gradient(135deg, #fef08a, #fde68a, #fca5a5);
+      }
+      to {
+        background: linear-gradient(135deg, #bfdbfe, #f0abfc, #fef3c7);
+      }
+    }
+
+    .team-active {
+      background: #facc15 !important;
+      border-color: #ca8a04 !important;
+      transform: scale(1.05);
+    }
+
+    .animal-emoji {
+      width: clamp(150px, 17vw, 300px);
+      height: clamp(150px, 17vw, 300px);
+      border-radius: 2rem;
+      background: linear-gradient(135deg, #dbeafe, #dcfce7);
+      border: 6px solid #2563eb;
+      display: grid;
+      place-items: center;
+      font-size: clamp(6rem, 11vw, 13rem);
+      line-height: 1;
+      box-shadow: 0 14px 22px rgba(15, 23, 42, 0.18);
+    }
+
+    .animal-emoji-small {
+      width: clamp(120px, 14vw, 240px);
+      height: clamp(120px, 14vw, 240px);
+      border-radius: 2rem;
+      background: linear-gradient(135deg, #dbeafe, #dcfce7);
+      border: 6px solid #2563eb;
+      display: grid;
+      place-items: center;
+      font-size: clamp(4.8rem, 9vw, 10rem);
+      line-height: 1;
+      box-shadow: 0 14px 22px rgba(15, 23, 42, 0.18);
+    }
+
+    .overlay-glass {
+      background: rgba(15, 23, 42, 0.56);
+      backdrop-filter: blur(7px);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .feedback-card-shadow {
+      box-shadow: 0 20px 36px rgba(15, 23, 42, 0.2);
+    }
+
+    .feedback-sentence-box {
+      width: 100%;
+      min-height: 20vh;
+      max-height: 24vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .feedback-sentence-wrap {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .feedback-sentence {
+      max-width: 100%;
+      max-height: 100%;
+      overflow: hidden;
+      line-height: 1.08;
+      text-align: center;
+      font-weight: 900;
+      color: #334155;
+      white-space: normal;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      display: inline-block;
+    }
+
+    .feedback-word-big {
+      font-size: 2.85em;
+      line-height: 0.95;
+      color: #3b5edb;
+      font-weight: 900;
+      vertical-align: middle;
+      display: inline-block;
+      margin: 0 0.06em;
+    }
+
+    .syllable-part {
+      display: inline-block;
+      border-bottom: 10px solid #facc15;
+      margin: 0 0.04em;
+      padding-bottom: 0.04em;
+      line-height: 1;
+    }
+
+    .feedback-after {
+      display: inline;
+      color: #334155;
+      font-weight: 900;
+    }
+
+    @media (max-width: 1200px) {
+      .feedback-word-big {
+        font-size: 2.25em;
+      }
+
+      .syllable-part {
+        border-bottom-width: 7px;
+      }
+    }
+  </style>
+</head>
+<body class="game-font">
+  <main id="app" class="w-full h-screen overflow-hidden"></main>
+
+  <script>
+    const app = document.getElementById("app");
+
+    let teamCount = 4;
+    let teams = [];
+    let scores = [];
+    let currentTeamIndex = 0;
+    let round = 1;
+    let timer = null;
+    let breakTimer = null;
+    let nextTimeout = null;
+    let timeLeft = 20;
+    let currentQuestion = null;
+    let usedQueue = [];
+    let isLocked = false;
+    let isLightning = false;
+    let selectedVoice = null;
+
+    const questionBank = [
+      { word: "ant", parts: ["ant"], syllables: 1, sentence: "Can the ant jump?" },
+      { word: "yak", parts: ["yak"], syllables: 1, sentence: "Can the yak fly?" },
+      { word: "frog", parts: ["frog"], syllables: 1, sentence: "Can the frog jump?" },
+      { word: "wolf", parts: ["wolf"], syllables: 1, sentence: "Can the wolf soar?" },
+      { word: "bear", parts: ["bear"], syllables: 1, sentence: "Can the bear fly?" },
+      { word: "cat", parts: ["cat"], syllables: 1, sentence: "Can the cat fly?" },
+      { word: "dog", parts: ["dog"], syllables: 1, sentence: "Can the dog run?" },
+      { word: "goat", parts: ["goat"], syllables: 1, sentence: "Can the goat climb?" },
+      { word: "horse", parts: ["horse"], syllables: 1, sentence: "Can the horse run?" },
+      { word: "duck", parts: ["duck"], syllables: 1, sentence: "Can the duck soar?" },
+      { word: "pig", parts: ["pig"], syllables: 1, sentence: "Can the pig walk?" },
+      { word: "fox", parts: ["fox"], syllables: 1, sentence: "Can the fox run?" },
+      { word: "owl", parts: ["owl"], syllables: 1, sentence: "Can the owl fly?" },
+      { word: "newt", parts: ["newt"], syllables: 1, sentence: "Can the newt swim?" },
+      { word: "quail", parts: ["quail"], syllables: 1, sentence: "Can the quail fly?" },
+
+      { word: "lion", parts: ["li", "on"], syllables: 2, sentence: "Can the lion run?" },
+      { word: "tiger", parts: ["ti", "ger"], syllables: 2, sentence: "Can the tiger run?" },
+      { word: "jaguar", parts: ["ja", "guar"], syllables: 2, sentence: "Can the jaguar jump?" },
+      { word: "turtle", parts: ["tur", "tle"], syllables: 2, sentence: "Can the turtle swim?" },
+      { word: "eagle", parts: ["ea", "gle"], syllables: 2, sentence: "Can the eagle swim?" },
+      { word: "monkey", parts: ["mon", "key"], syllables: 2, sentence: "Can the monkey climb?" },
+      { word: "rabbit", parts: ["ra", "bbit"], syllables: 2, sentence: "Can the rabbit hop?" },
+      { word: "zebra", parts: ["ze", "bra"], syllables: 2, sentence: "Can the zebra fly?" },
+      { word: "vulture", parts: ["vul", "ture"], syllables: 2, sentence: "Can the vulture soar?" },
+      { word: "ostrich", parts: ["os", "trich"], syllables: 2, sentence: "Can the ostrich run?" },
+      { word: "squirrel", parts: ["squir", "rel"], syllables: 2, sentence: "Can the squirrel jump?" },
+
+      { word: "iguana", parts: ["i", "gua", "na"], syllables: 3, sentence: "Can the iguana climb?" },
+      { word: "kangaroo", parts: ["kan", "ga", "roo"], syllables: 3, sentence: "Can the kangaroo soar?" },
+      { word: "elephant", parts: ["e", "le", "phant"], syllables: 3, sentence: "Can the elephant walk?" },
+      { word: "unicorn", parts: ["u", "ni", "corn"], syllables: 3, sentence: "Can the unicorn run?" },
+      { word: "animals", parts: ["a", "ni", "mals"], syllables: 3, sentence: "Can the animals play?" }
+    ];
+
+    const animalEmojiMap = {
+      ant: "🐜",
+      yak: "🐂",
+      frog: "🐸",
+      wolf: "🐺",
+      bear: "🐻",
+      cat: "🐱",
+      dog: "🐶",
+      goat: "🐐",
+      horse: "🐴",
+      duck: "🦆",
+      pig: "🐷",
+      fox: "🦊",
+      owl: "🦉",
+      lion: "🦁",
+      tiger: "🐯",
+      jaguar: "🐆",
+      turtle: "🐢",
+      eagle: "🦅",
+      monkey: "🐵",
+      rabbit: "🐰",
+      newt: "🦎",
+      zebra: "🦓",
+      quail: "🐦",
+      vulture: "🦅",
+      iguana: "🦎",
+      kangaroo: "🦘",
+      elephant: "🐘",
+      ostrich: "🐦",
+      unicorn: "🦄",
+      squirrel: "🐿️",
+      animals: "🐾"
+    };
+
+    function getAnimalEmoji(word) {
+      return animalEmojiMap[word] || "🐾";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function fillQuestionQueue() {
+      usedQueue = shuffle(questionBank);
+    }
+
+    function getLevel() {
+      if (round <= 2) return 1;
+      if (round <= 4) return 2;
+      if (round <= 6) return 3;
+      return 4;
+    }
+
+    function getBaseTime() {
+      const level = getLevel();
+      if (level === 1) return 20;
+      if (level === 2) return 18;
+      if (level === 3) return 16;
+      return 12;
+    }
+
+    function loadVoices() {
+      if (!("speechSynthesis" in window)) return;
+      const voices = speechSynthesis.getVoices();
+      selectedVoice =
+        voices.find(v => v.lang === "en-US" && /female|jenny|aria|samantha|google/i.test(v.name)) ||
+        voices.find(v => v.lang === "en-US") ||
+        voices.find(v => v.lang.startsWith("en")) ||
+        null;
+    }
+
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function speak(text, rate = 0.85, pitch = 1.03) {
+      if (!("speechSynthesis" in window)) return;
+      speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      if (selectedVoice) utterance.voice = selectedVoice;
+      speechSynthesis.speak(utterance);
+    }
+
+    function stopSpeech() {
+      if ("speechSynthesis" in window) speechSynthesis.cancel();
+    }
+
+    function clearAllTimers(includeNext = true) {
+      clearInterval(timer);
+      clearInterval(breakTimer);
+      if (includeNext) clearTimeout(nextTimeout);
+      timer = null;
+      breakTimer = null;
+    }
+
+    function renderStart() {
+      clearAllTimers();
+      stopSpeech();
+
+      app.innerHTML = `
+        <section class="w-full h-screen flex items-center justify-center p-8">
+          <div class="kid-card bg-white rounded-[3rem] w-full max-w-5xl p-10 text-center animate__animated animate__zoomIn">
+            <div class="text-8xl font-black text-blue-700 mb-3">Syllable Sprint</div>
+            <div class="text-4xl font-black text-emerald-600 mb-8">Clap, Listen, Pick, Score!</div>
+
+            <div class="grid grid-cols-2 gap-8 items-center">
+              <div class="bg-yellow-100 rounded-[2rem] border-4 border-yellow-400 p-8">
+                <label for="teamInput" class="block text-4xl font-black text-slate-800 mb-5">
+                  Teams
+                </label>
+
+                <input
+                  id="teamInput"
+                  type="number"
+                  min="1"
+                  max="26"
+                  value="4"
+                  class="w-full text-center text-7xl font-black rounded-3xl border-4 border-blue-500 p-4 focus:outline-none focus:ring-8 focus:ring-blue-200"
+                />
+
+                <button
+                  id="playBtn"
+                  class="mt-8 w-full rounded-3xl bg-blue-600 hover:bg-blue-700 text-white text-5xl font-black py-6 border-b-8 border-blue-900 active:border-b-0 active:translate-y-2 transition"
+                >
+                  Play
+                </button>
+              </div>
+
+              <div class="bg-sky-100 rounded-[2rem] border-4 border-sky-400 p-8 text-left">
+                <div class="text-4xl font-black text-blue-800 mb-5">Rules</div>
+                <div class="space-y-5 text-4xl font-black text-slate-800">
+                  <div>Right: <span class="text-green-600">+5</span></div>
+                  <div>Oops or Time: <span class="text-red-500">+1</span></div>
+                  <div>Fast Round: <span class="text-amber-500">+10</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+
+      document.getElementById("playBtn").addEventListener("click", () => {
+        const input = document.getElementById("teamInput");
+        const value = Math.max(1, Math.min(26, Number(input.value) || 4));
+        startGame(value);
+      });
+    }
+
+    function startGame(count) {
+      teamCount = count;
+      teams = Array.from({ length: teamCount }, (_, index) => `Team ${String.fromCharCode(65 + index)}`);
+      scores = Array.from({ length: teamCount }, () => 0);
+      currentTeamIndex = 0;
+      round = 1;
+      fillQuestionQueue();
+      renderGameShell();
+      nextQuestion();
+    }
+
+    function statCard(label, id, value) {
+      return `
+        <div class="bg-white rounded-3xl border-4 border-blue-700 shadow-xl flex flex-col items-center justify-center">
+          <div class="text-2xl font-black text-slate-500">${label}</div>
+          <div id="${id}" class="text-5xl font-black text-blue-700">${value}</div>
+        </div>
+      `;
+    }
+
+    function answerButton(number) {
+      const label = number === 1 ? "1 Syllable" : `${number} Syllables`;
+      return `
+        <button
+          data-choice="${number}"
+          id="answer${number}"
+          class="answer-btn w-full rounded-[2rem] border-4 border-blue-700 bg-sky-100 text-blue-800 text-6xl font-black py-10"
+        >
+          ${label}
+        </button>
+      `;
+    }
+
+    function renderGameShell() {
+      app.innerHTML = `
+        <section id="gameRoot" class="relative w-full h-screen overflow-hidden p-5 flex flex-col">
+          <header class="grid grid-cols-4 gap-4 h-[12vh]">
+            ${statCard("Round", "roundText", round)}
+            ${statCard("Level", "levelText", getLevel())}
+            ${statCard("Turn", "turnText", escapeHtml(teams[currentTeamIndex]))}
+            ${statCard("Time", "timeText", timeLeft)}
+          </header>
+
+          <div
+            id="lightningBanner"
+            class="hidden h-[7vh] mt-2 rounded-3xl bg-amber-300 border-4 border-amber-600 text-center text-5xl font-black text-amber-900 items-center justify-center animate__animated animate__flash animate__infinite"
+          >
+            ⚡ SUPER FAST! +10 POINTS! ⚡
+          </div>
+
+          <section class="flex-1 min-h-0 grid grid-cols-[1.12fr_0.88fr] gap-5 py-4">
+            <div class="kid-card bg-white rounded-[3rem] p-7 flex flex-col justify-center items-center relative">
+              <div class="text-5xl font-black text-slate-700 mb-4 text-center">
+                Listen and count the syllables.
+              </div>
+
+              <div class="w-full grid grid-cols-[1fr_auto] gap-7 items-center">
+                <div class="text-center">
+                  <div
+                    id="wordText"
+                    class="text-[clamp(6rem,13vw,13rem)] leading-none font-black text-blue-700 animate__animated"
+                  ></div>
+                </div>
+
+                <div class="flex flex-col items-center gap-4">
+                  <div id="animalEmoji" class="animal-emoji" aria-label="animal">🐾</div>
+                </div>
+              </div>
+
+              <div class="flex gap-5 mt-5">
+                <button
+                  id="listenBtn"
+                  class="rounded-3xl bg-indigo-500 hover:bg-indigo-600 text-white text-4xl font-black px-10 py-5 border-b-8 border-indigo-900 active:border-b-0 active:translate-y-2 transition"
+                >
+                  Listen
+                </button>
+
+                <button
+                  id="skipBtn"
+                  class="rounded-3xl bg-orange-500 hover:bg-orange-600 text-white text-4xl font-black px-10 py-5 border-b-8 border-orange-900 active:border-b-0 active:translate-y-2 transition"
+                >
+                  Skip
+                </button>
+
+                <button
+                  id="restartBtn"
+                  class="rounded-3xl bg-slate-600 hover:bg-slate-700 text-white text-4xl font-black px-10 py-5 border-b-8 border-slate-900 active:border-b-0 active:translate-y-2 transition"
+                >
+                  Restart
+                </button>
+              </div>
+            </div>
+
+            <div class="kid-card bg-white rounded-[3rem] p-7 flex flex-col justify-center gap-7">
+              ${answerButton(1)}
+              ${answerButton(2)}
+              ${answerButton(3)}
+            </div>
+          </section>
+
+          <footer class="h-[16vh] kid-card bg-white rounded-[2rem] p-3">
+            <div class="text-3xl font-black text-blue-800 mb-2 text-center">Scoreboard</div>
+            <div id="scoreboard" class="no-scrollbar h-[9vh] overflow-hidden grid gap-3"></div>
+          </footer>
+
+          <div
+            id="overlay"
+            class="hidden absolute inset-0 overlay-glass z-50 items-center justify-center p-8"
+          ></div>
+        </section>
+      `;
+
+      document.getElementById("listenBtn").addEventListener("click", () => {
+        if (currentQuestion) speak(currentQuestion.word);
+      });
+
+      document.getElementById("skipBtn").addEventListener("click", () => {
+        if (!isLocked) handleAnswer(0, true);
+      });
+
+      document.getElementById("restartBtn").addEventListener("click", renderStart);
+
+      document.querySelectorAll(".answer-btn").forEach(button => {
+        button.addEventListener("click", () => {
+          const choice = Number(button.dataset.choice);
+          handleAnswer(choice, false);
+        });
+      });
+
+      renderScoreboard();
+    }
+
+    function renderScoreboard() {
+      const scoreboard = document.getElementById("scoreboard");
+      if (!scoreboard) return;
+
+      scoreboard.style.gridTemplateColumns = `repeat(${Math.min(teamCount, 13)}, minmax(0, 1fr))`;
+
+      scoreboard.innerHTML = teams.map((team, index) => {
+        const activeClass = index === currentTeamIndex ? "team-active" : "";
+        return `
+          <div class="rounded-2xl border-4 border-slate-300 bg-slate-100 text-center px-2 py-1 ${activeClass}">
+            <div class="text-2xl font-black text-slate-700">${escapeHtml(team)}</div>
+            <div class="text-4xl font-black text-blue-700">${scores[index]}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function updateHeader() {
+      const roundText = document.getElementById("roundText");
+      const levelText = document.getElementById("levelText");
+      const turnText = document.getElementById("turnText");
+      const timeText = document.getElementById("timeText");
+
+      if (roundText) roundText.textContent = round;
+      if (levelText) levelText.textContent = getLevel();
+      if (turnText) turnText.textContent = teams[currentTeamIndex];
+
+      if (timeText) {
+        timeText.textContent = timeLeft;
+        timeText.classList.toggle("timer-danger", timeLeft <= 5);
+      }
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        updateHeader();
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          handleTimeout();
+        }
+      }, 1000);
+    }
+
+    function resetButtons() {
+      document.querySelectorAll(".answer-btn").forEach(button => {
+        button.disabled = false;
+        button.classList.remove(
+          "correct-choice",
+          "wrong-choice",
+          "animate__animated",
+          "animate__shakeX",
+          "animate__heartBeat"
+        );
+      });
+    }
+
+    function disableButtons() {
+      document.querySelectorAll(".answer-btn").forEach(button => {
+        button.disabled = true;
+      });
+    }
+
+    function nextQuestion() {
+      clearAllTimers();
+      isLocked = false;
+
+      if (!usedQueue.length) fillQuestionQueue();
+      currentQuestion = usedQueue.pop();
+
+      isLightning = Math.random() < 0.2;
+      timeLeft = isLightning ? 5 : getBaseTime();
+
+      const gameRoot = document.getElementById("gameRoot");
+      const lightningBanner = document.getElementById("lightningBanner");
+
+      if (isLightning) {
+        gameRoot.classList.add("lightning-bg");
+        lightningBanner.classList.remove("hidden");
+        lightningBanner.classList.add("flex");
+      } else {
+        gameRoot.classList.remove("lightning-bg");
+        lightningBanner.classList.add("hidden");
+        lightningBanner.classList.remove("flex");
+      }
+
+      resetButtons();
+      updateHeader();
+      renderScoreboard();
+
+      const wordText = document.getElementById("wordText");
+      const animalEmoji = document.getElementById("animalEmoji");
+
+      wordText.textContent = currentQuestion.word;
+      wordText.className =
+        "text-[clamp(6rem,13vw,13rem)] leading-none font-black text-blue-700 animate__animated animate__bounceIn";
+
+      animalEmoji.textContent = getAnimalEmoji(currentQuestion.word);
+      animalEmoji.classList.remove("animate__animated", "animate__bounceIn");
+      void animalEmoji.offsetWidth;
+      animalEmoji.classList.add("animate__animated", "animate__bounceIn");
+
+      speak(currentQuestion.word);
+      startTimer();
+    }
+
+    function markButtons(choice, correct) {
+      const correctButton = document.getElementById(`answer${correct}`);
+      if (correctButton) {
+        correctButton.classList.add("correct-choice", "animate__animated", "animate__heartBeat");
+      }
+
+      if (choice && choice !== correct) {
+        const wrongButton = document.getElementById(`answer${choice}`);
+        if (wrongButton) {
+          wrongButton.classList.add("wrong-choice", "animate__animated", "animate__shakeX");
+        }
+      }
+    }
+
+    function handleAnswer(choice, isSkip) {
+      if (isLocked || !currentQuestion) return;
+
+      isLocked = true;
+      clearInterval(timer);
+      disableButtons();
+
+      const correct = currentQuestion.syllables;
+      const isCorrect = choice === correct && !isSkip;
+      const points = isCorrect ? (isLightning ? 10 : 5) : 1;
+
+      scores[currentTeamIndex] += points;
+      markButtons(choice, correct);
+
+      showFeedback({
+        title: isCorrect ? "Awesome!" : "Oops!",
+        type: isCorrect ? "correct" : "wrong",
+        points
+      });
+    }
+
+    function handleTimeout() {
+      if (isLocked || !currentQuestion) return;
+
+      isLocked = true;
+      disableButtons();
+      markButtons(0, currentQuestion.syllables);
+
+      scores[currentTeamIndex] += 1;
+
+      showFeedback({
+        title: "Time's Up!",
+        type: "time",
+        points: 1
+      });
+    }
+
+    function syllableHtml(question) {
+      const sentence = question.sentence;
+      const word = question.word;
+      const lowerSentence = sentence.toLowerCase();
+      const lowerWord = word.toLowerCase();
+      const targetIndex = lowerSentence.indexOf(lowerWord);
+
+      const splitWordHtml = question.parts
+        .map(part => `<span class="syllable-part">${escapeHtml(part)}</span>`)
+        .join("");
+
+      if (targetIndex === -1) {
+        return `
+          ${escapeHtml(sentence)}
+          <span class="feedback-word-big">${splitWordHtml}</span>
+        `;
+      }
+
+      const before = sentence.slice(0, targetIndex);
+      const after = sentence.slice(targetIndex + word.length);
+
+      return `
+        ${escapeHtml(before)}
+        <span class="feedback-word-big">${splitWordHtml}</span>
+        <span class="feedback-after">${escapeHtml(after)}</span>
+      `;
+    }
+
+    function fitFeedbackSentence() {
+      const wrapper = document.getElementById("feedbackSentenceWrap");
+      const sentence = document.getElementById("feedbackSentence");
+      if (!wrapper || !sentence) return;
+
+      let fontSize = 68;
+      const minFontSize = 26;
+
+      sentence.style.fontSize = fontSize + "px";
+      sentence.style.lineHeight = "1.08";
+
+      for (let i = 0; i < 40; i++) {
+        const computedLineHeight = parseFloat(getComputedStyle(sentence).lineHeight) || fontSize * 1.08;
+        const approxLines = sentence.scrollHeight / computedLineHeight;
+        const tooTall = sentence.scrollHeight > wrapper.clientHeight;
+        const tooManyLines = approxLines > 2.08;
+
+        if (!tooTall && !tooManyLines) break;
+
+        fontSize -= 2;
+        if (fontSize < minFontSize) {
+          fontSize = minFontSize;
+          sentence.style.fontSize = fontSize + "px";
+          break;
+        }
+        sentence.style.fontSize = fontSize + "px";
+      }
+    }
+
+    function showFeedback({ title, type, points }) {
+      const overlay = document.getElementById("overlay");
+      const isCorrect = type === "correct";
+      const isWrong = type === "wrong";
+
+      const borderColor = isCorrect
+        ? "border-green-400"
+        : isWrong
+          ? "border-red-400"
+          : "border-amber-400";
+
+      const titleColor = isCorrect
+        ? "text-emerald-500"
+        : isWrong
+          ? "text-red-500"
+          : "text-amber-500";
+
+      const pointText = `+${points} ${points === 1 ? "Point" : "Points"}`;
+
+      overlay.classList.remove("hidden");
+      overlay.classList.add("flex");
+
+      overlay.innerHTML = `
+        <div class="feedback-card-shadow bg-white rounded-[2.6rem] border-[8px] ${borderColor} w-full max-w-5xl min-h-[56vh] p-8 text-center animate__animated animate__zoomIn">
+          <div class="${titleColor} text-8xl font-black mb-4">
+            ${escapeHtml(title)}
+          </div>
+
+          <div class="grid grid-cols-[1.2fr_0.8fr] gap-5 items-center">
+            <div class="bg-white rounded-[2rem] p-3 min-h-[26vh] flex items-center justify-center overflow-hidden">
+              <div class="feedback-sentence-box">
+                <div id="feedbackSentenceWrap" class="feedback-sentence-wrap">
+                  <div id="feedbackSentence" class="feedback-sentence">
+                    ${syllableHtml(currentQuestion)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-center">
+              <div class="animal-emoji-small animate__animated animate__bounceIn">
+                ${getAnimalEmoji(currentQuestion.word)}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 text-6xl font-black text-sky-600">
+            ${escapeHtml(pointText)}
+          </div>
+        </div>
+      `;
+
+      requestAnimationFrame(() => {
+        fitFeedbackSentence();
+      });
+
+      speak(currentQuestion.sentence, 0.82, 1.03);
+      renderScoreboard();
+
+      nextTimeout = setTimeout(() => {
+        overlay.classList.add("hidden");
+        overlay.classList.remove("flex");
+        advanceTurn();
+      }, 2500);
+    }
+
+    function advanceTurn() {
+      clearAllTimers(false);
+      currentTeamIndex++;
+
+      if (currentTeamIndex >= teamCount) {
+        currentTeamIndex = 0;
+        showBreakTime();
+        return;
+      }
+
+      nextQuestion();
+    }
+
+    function showBreakTime() {
+      clearAllTimers();
+      stopSpeech();
+      round++;
+
+      const overlay = document.getElementById("overlay");
+      let count = 3;
+
+      overlay.classList.remove("hidden");
+      overlay.classList.add("flex");
+
+      const renderBreak = () => {
+        overlay.innerHTML = `
+          <div class="bg-white rounded-[3rem] border-[10px] border-blue-500 w-full max-w-5xl p-12 text-center animate__animated animate__bounceIn">
+            <div class="text-8xl font-black text-blue-700 mb-8">Break Time</div>
+            <div class="text-5xl font-black text-slate-700 mb-8">
+              All teams played. Get ready for the next round!
+            </div>
+            <div class="text-[12rem] leading-none font-black text-amber-500 animate__animated animate__pulse animate__infinite">
+              ${count}
+            </div>
+          </div>
+        `;
+      };
+
+      renderBreak();
+      speak("Break time. Get ready!", 0.85, 1.03);
+
+      breakTimer = setInterval(() => {
+        count--;
+        if (count <= 0) {
+          clearInterval(breakTimer);
+          overlay.classList.add("hidden");
+          overlay.classList.remove("flex");
+          nextQuestion();
+        } else {
+          renderBreak();
+        }
+      }, 1000);
+    }
+
+    window.addEventListener("resize", () => {
+      fitFeedbackSentence();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      clearAllTimers();
+      stopSpeech();
+    });
+
+    renderStart();
+  </script>
+</body>
+</html>
